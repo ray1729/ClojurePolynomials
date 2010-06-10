@@ -61,7 +61,7 @@
   [p q]
   (when (not= (variable p) (variable q))
     (throw (IllegalArgumentException. "addition of polynomials in different variables not supported")))
-  (polynomial (variable p) (merge-with + (terms p) (terms q))))
+  (polynomial (variable p) (merge-with ga/+ (terms p) (terms q))))
 
 (defmethod ga/- ::polynomial
   [p]
