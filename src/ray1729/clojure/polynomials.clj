@@ -47,7 +47,7 @@
 (def variable (accessor polynomial-struct :variable))
 (def terms    (accessor polynomial-struct :terms))
 
-(defn degree [p] (reduce max (map key (filter #(not (zero? (val %))) (terms p)))))
+(defn degree [p] (key (last (terms p))))
 
 (defmethod gc/zero? ::polynomial
   [p]
