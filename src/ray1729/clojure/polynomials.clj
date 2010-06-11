@@ -33,9 +33,9 @@
            [accum terms]
            (if (empty? terms) accum
                (let [[order coeff] (first terms)]
-                 (if (zero? coeff) 
+                 (if (gc/zero? coeff) 
                    (recur accum (rest terms))
-                   (recur (assoc accum order (+ (get accum order 0) coeff)) (rest terms))))))]
+                   (recur (assoc accum order (ga/+ (get accum order 0) coeff)) (rest terms))))))]
     (build-term-list (sorted-map) (partition 2 (canonicalize-terms terms)))))
 
 (deftype ::polynomial polynomial
@@ -48,6 +48,14 @@
 (def terms    (accessor polynomial-struct :terms))
 
 (defn degree [p] (key (last (terms p))))
+
+(defn to-fn [p]
+  (letfn [(pow [x y] (reduce * (repeat y x)))]
+    (fn [u]
+      (reduce ga/+ (map (fn [[order coeff]] (ga/* coeff (pow u order))) (terms p))))))
+
+(defn evaluate [p u]
+  ((to-fn p) u))
 
 (defmethod gc/zero? ::polynomial
   [p]
@@ -63,6 +71,12 @@
     (throw (IllegalArgumentException. "addition of polynomials in different variables not supported")))
   (polynomial (variable p) (merge-with ga/+ (terms p) (terms q))))
 
+(defmethod ga/+ [root-type ::polynomial]
+  [c p]
+  (ga/+ (polynomial (variable p) 0 c) p))
+
+(defmethod ga/+ [::polynomial root-type] [p c] (ga/+ c p))
+
 (defmethod ga/- ::polynomial
   [p]
   (polynomial (variable p) (interleave (keys (terms p)) (map ga/- (vals (terms p))))))
@@ -75,3 +89,9 @@
     (reduce ga/+ (for [[order coeff] (terms p)]
                    (polynomial (variable p) 
                     (interleave (map #(+ order %) (keys tq)) (map #(ga/* coeff %) (vals tq))))))))
+
+(defmethod ga/* [root-type ::polynomial]
+  [c p]
+  (ga/* (polynomial (variable p) 0 c) p))
+
+(defmethod ga/* [::polynomial root-type] [p c] (ga/* c p))
