@@ -119,13 +119,13 @@
   [p c] 
   (polynomial (variable p) (add-terms (terms p) {0 c})))
 
-(defmethod ga/- ::polynomial
-  [p]
-  (polynomial (variable p) (interleave (keys (terms p)) (map ga/- (vals (terms p))))))
-
 (defn- multiply-terms [tp tq]
   (reduce concat (for [[order coeff] tp]
                    (interleave (map #(+ order %) (keys tq)) (map #(ga/* coeff %) (vals tq))))))
+
+(defmethod ga/- ::polynomial
+  [p]
+  (polynomial (variable p) (multiply-terms {0 -1} (terms p))))
 
 (defmethod ga/* [::polynomial ::polynomial]
   [p q]
