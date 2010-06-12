@@ -34,10 +34,11 @@
           (build-term-list
            [accum terms]
            (if (empty? terms) accum
-               (let [[order coeff] (first terms)]
-                 (if (gc/zero? coeff) 
-                   (recur accum (rest terms))
-                   (recur (assoc accum order (ga/+ (get accum order 0) coeff)) (rest terms))))))]
+               (let [[order coeff] (first terms)
+                     new-coeff (ga/+ (get accum order 0) coeff)]
+                 (if (gc/zero? new-coeff) 
+                   (recur (dissoc accum order) (rest terms))                   
+                   (recur (assoc accum order new-coeff) (rest terms))))))]
     (build-term-list (sorted-map) (partition 2 (canonicalize-terms terms)))))
 
 (deftype ::polynomial polynomial
