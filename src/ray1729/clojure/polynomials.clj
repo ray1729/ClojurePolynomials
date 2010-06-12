@@ -101,19 +101,22 @@
 ; Arithmetic operations
 ;
 
+(defn- add-terms [tp tq]
+  (reduce concat (concat tp tq)))
+
 (defmethod ga/+ [::polynomial ::polynomial]
   [p q]
   (when (not= (variable p) (variable q))
     (throw (IllegalArgumentException. "addition of polynomials in different variables not supported")))
-  (polynomial (variable p) (merge-with ga/+ (terms p) (terms q))))
+  (polynomial (variable p) (add-terms (terms p) (terms q))))
 
 (defmethod ga/+ [root-type ::polynomial]
   [c p]
-  (ga/+ (polynomial (variable p) (merge-with ga/+ {0 c} (terms p)))))
+  (polynomial (variable p) (add-terms {0 c} (terms p))))
 
 (defmethod ga/+ [::polynomial root-type] 
   [p c] 
-  (ga/+ (polynomial (variable p) (merge-with ga/+ (terms p) {0 c}))))
+  (polynomial (variable p) (add-terms (terms p) {0 c})))
 
 (defmethod ga/- ::polynomial
   [p]
