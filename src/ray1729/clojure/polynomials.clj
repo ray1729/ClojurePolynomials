@@ -7,7 +7,8 @@
   ray1729.clojure.polynomials
   (:refer-clojure :exclude (deftype))
   (:use [clojure.contrib.types :only (deftype)]
-	[clojure.contrib.generic :only (root-type)])
+	[clojure.contrib.generic :only (root-type)]
+        [clojure.contrib.math :only (expt)])
   (:require [clojure.contrib.generic.arithmetic :as ga]
 	    [clojure.contrib.generic.comparison :as gc]))
 
@@ -51,12 +52,10 @@
 (defn degree [p] (key (last (terms p))))
 
 (defn to-fn [p]
-  (letfn [(pow [x y] (reduce * (repeat y x)))]
-    (fn [u]
-      (reduce ga/+ (map (fn [[order coeff]] (ga/* coeff (pow u order))) (terms p))))))
+  (fn [u]
+    (reduce ga/+ (map (fn [[order coeff]] (ga/* coeff (expt u order))) (terms p)))))
 
-(defn evaluate [p u]
-  ((to-fn p) u))
+(defn evaluate [p u] ((to-fn p) u))
 
 (defn to-str [p]
   (letfn [(plus-or-minus [coeff]
@@ -101,6 +100,8 @@
 ; Arithmetic operations
 ;
 
+; To add terms, simply concatenate together the two seqs: build-term-list will
+; add together terms of the same order.
 (defn- add-terms [tp tq]
   (reduce concat (concat tp tq)))
 
