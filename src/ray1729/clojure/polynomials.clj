@@ -15,7 +15,7 @@
 ; Polynomials are represented as struct maps with a variable and a
 ; sorted hash of terms: the key in the hash is the order, and the
 ; value the corresponding coefficient
-
+;
 (defstruct polynomial-struct :variable :terms)
 
 ;
@@ -109,25 +109,30 @@
 
 (defmethod ga/+ [root-type ::polynomial]
   [c p]
-  (ga/+ (polynomial (variable p) 0 c) p))
+  (ga/+ (polynomial (variable p) (merge-with ga/+ {0 c} (terms p)))))
 
-(defmethod ga/+ [::polynomial root-type] [p c] (ga/+ c p))
+(defmethod ga/+ [::polynomial root-type] 
+  [p c] 
+  (ga/+ (polynomial (variable p) (merge-with ga/+ (terms p) {0 c}))))
 
 (defmethod ga/- ::polynomial
   [p]
   (polynomial (variable p) (interleave (keys (terms p)) (map ga/- (vals (terms p))))))
 
+(defn- multiply-terms [tp tq]
+  (reduce concat (for [[order coeff] tp]
+                   (interleave (map #(+ order %) (keys tq)) (map #(ga/* coeff %) (vals tq))))))
+
 (defmethod ga/* [::polynomial ::polynomial]
   [p q]
   (when (not= (variable p) (variable q))
-    (throw (IllegalArgumentException. "multiplication of polynomials in different variables not supported")))  
-  (let [tq (terms q)]
-    (reduce ga/+ (for [[order coeff] (terms p)]
-                   (polynomial (variable p) 
-                    (interleave (map #(+ order %) (keys tq)) (map #(ga/* coeff %) (vals tq))))))))
-
+    (throw (IllegalArgumentException. "multiplication of polynomials in different variables not supported")))
+  (polynomial (variable p) (multiply-terms (terms p) (terms q))))
+  
 (defmethod ga/* [root-type ::polynomial]
   [c p]
-  (ga/* (polynomial (variable p) 0 c) p))
+  (polynomial (variable p) (multiply-terms {0 c} (terms p))))
 
-(defmethod ga/* [::polynomial root-type] [p c] (ga/* c p))
+(defmethod ga/* [::polynomial root-type] 
+  [p c]
+  (polynomial (variable p) (multiply-terms (terms p) {0 c})))
