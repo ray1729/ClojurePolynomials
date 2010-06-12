@@ -12,8 +12,9 @@
 	    [clojure.contrib.generic.comparison :as gc]))
 
 ;
-; Polynomials are represented as struct maps with a variable
-; and hash of terms: the key is the order, and the value the coefficient
+; Polynomials are represented as struct maps with a variable and a
+; sorted hash of terms: the key in the hash is the order, and the
+; value the corresponding coefficient
 
 (defstruct polynomial-struct :variable :terms)
 
@@ -57,6 +58,37 @@
 (defn evaluate [p u]
   ((to-fn p) u))
 
+(defn to-str [p]
+  (letfn [(plus-or-minus [coeff]
+            (if (neg? coeff) " - " " + "))
+          (display-coeff [coeff order]
+            (cond
+              (and (or (= coeff 1) (= coeff -1)) (not (zero? order))) ""
+              (neg? coeff) (- coeff)
+              :else coeff))
+          (x-term [order]
+            (cond
+              (zero? order) ""
+              (= order 1) (variable p)
+              :else (str (variable p) "^" order)))
+          (leading-term [terms d]
+              (let [c (get terms d 0)
+                    dc (display-coeff c d)
+                    xt (x-term d)]
+                (str (if (neg? c) "-" "") dc xt)))]
+    (let [d (degree p)]
+      (loop [s (leading-term (terms p) d) d (dec d)]
+        (if (neg? d) s
+          (let [c ((terms p) d)
+                pm (plus-or-minus c)
+                dc (display-coeff c d)
+                xt (x-term d)]
+            (recur (if (zero? c) s (str s pm dc xt)) (dec d))))))))
+
+;
+; Comparison operations
+;
+
 (defmethod gc/zero? ::polynomial
   [p]
   (every? zero? (vals (terms p))))
@@ -64,6 +96,10 @@
 (defmethod gc/= [::polynomial ::polynomial]
   [p q]
   (and (= (variable p) (variable q)) (= (terms p) (terms q))))
+
+;
+; Arithmetic operations
+;
 
 (defmethod ga/+ [::polynomial ::polynomial]
   [p q]
