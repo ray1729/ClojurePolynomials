@@ -90,13 +90,27 @@
 ; Comparison operations
 ;
 
-(defmethod gc/zero? ::polynomial
-  [p]
-  (every? zero? (vals (terms p))))
+(defmethod gc/zero? ::polynomial [p] (empty? (terms p)))
 
 (defmethod gc/= [::polynomial ::polynomial]
   [p q]
   (and (= (variable p) (variable q)) (= (terms p) (terms q))))
+
+(defmethod gc/= [::polynomial root-type]
+  [p c]
+  (let [f  (first (terms p))
+        r  (rest  (terms p))]
+    (and (zero? (key f)) 
+         (gc/= c (val f)) 
+         (empty? r))))
+
+(defmethod gc/= [root-type ::polynomial]
+  [c p]
+  (let [f (first (terms p))
+        r (rest  (terms p))]
+    (and (zero? (key f))
+         (gc/= c (val f))
+         (empty? r))))
 
 ;
 ; Arithmetic operations
