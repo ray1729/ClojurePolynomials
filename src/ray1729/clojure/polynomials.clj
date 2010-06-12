@@ -10,7 +10,8 @@
 	[clojure.contrib.generic :only (root-type)]
         [clojure.contrib.math :only (expt)])
   (:require [clojure.contrib.generic.arithmetic :as ga]
-	    [clojure.contrib.generic.comparison :as gc]))
+	    [clojure.contrib.generic.comparison :as gc]
+            [clojure.contrib.generic.math-functions :as gm]))
 
 ;
 ; Polynomials are represented as struct maps with a variable and a
@@ -141,3 +142,14 @@
 (defmethod ga/* [::polynomial root-type] 
   [p c]
   (polynomial (variable p) (multiply-terms (terms p) {0 c})))
+
+(defmethod gm/pow [::polynomial java.lang.Integer]
+  [p n]
+  (when (< n 0) (throw (IllegalArgumentException. "pow for negative integers not supported")))    
+    (loop [n n accum (polynomial (variable p) 0 1) p p]
+      (let [t (bit-and n 1) n (bit-shift-right n 1)]
+        (cond
+          (and (zero? n) (zero? t)) accum
+          (zero? n) (ga/* accum p)
+          (zero? t) (recur n accum (ga/* p p))
+          :else (recur n (ga/* accum p) (ga/* p p))))))
